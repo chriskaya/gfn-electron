@@ -31,8 +31,27 @@ ipcRenderer.on('configData', function (event, config) {
     return platform;
   });
 
-  navigator.userAgentData.__defineGetter__('platform', function(){
-    return platform;
+  const originalUAData = Object.assign({}, navigator.userAgentData);
+  const highEntropyValues = navigator.userAgentData.getHighEntropyValues([
+    'architecture',
+    'bitness',
+    'model',
+    'platformVersion',
+    'uaFullVersion',
+    'fullVersionList',
+  ]).then((data) => (Promise.resolve({
+    ...data,
+    platform,
+  })));
+
+  highEntropyValues.then((data) => { console.log(JSON.stringify(data)); });
+
+  navigator.__defineGetter__('userAgentData', function() {
+    return {
+      ...originalUAData,
+      getHighEntropyValues: () => (highEntropyValues),
+      platform,
+    };
   });
 });
 

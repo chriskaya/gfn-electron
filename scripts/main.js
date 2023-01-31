@@ -11,7 +11,7 @@ const CHROME_UA = 'Mozilla/5.0 (X11; CrOS x86_64 14909.100.0) AppleWebKit/537.36
 
 const DEFAULT_LANG = 'en-GB';
 
-const DEFAULT_PLATFORM = 'Linux X86_64';
+const DEFAULT_PLATFORM = 'Linux';
 const WIN_PLATFORM = 'Windows';
 const CHROME_PLATFORM = DEFAULT_PLATFORM;
 
@@ -37,6 +37,7 @@ if (process.argv.includes('--lang')) {
 
 console.log('Using user agent: ' + userAgent);
 console.log('Process arguments: ' + process.argv);
+console.log('Platform: ' + platform);
 console.log('Language: ' + lang);
 
 ipcMain.on('getConfigData', function (event, arg) {
@@ -93,7 +94,9 @@ async function createWindow() {
 app.whenReady().then(async () => {
   createWindow();
 
-  BrowserWindow.getAllWindows()[0].webContents.openDevTools();
+  if (process.argv.includes('--open-dev-tools')) {
+    BrowserWindow.getAllWindows()[0].webContents.openDevTools();
+  }
 
   DiscordRPC('GeForce NOW');
 
