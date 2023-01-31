@@ -2,7 +2,17 @@
 // It has the same sandbox as a Chrome extension.
 const { ipcRenderer } = require('electron');
 
+const BRAND_CHROMIUM = 'Chromium';
+const BRAND_CHROME = 'Chrome';
+
 ipcRenderer.send('getConfigData');
+
+function handleBrands(brands = []) {
+  return brands.map((item) => ({
+    ...item,
+    brand: item.brand === BRAND_CHROMIUM ? BRAND_CHROME : item.brand,
+  }));
+};
 
 ipcRenderer.on('configData', function (event, config) {
   const {
@@ -11,9 +21,9 @@ ipcRenderer.on('configData', function (event, config) {
     lang,
   } = config || {};
 
-  console.log(userAgent);
-  console.log(platform);
-  console.log(lang);
+  ipcRenderer.send('log', 'Using user agent: ' + userAgent);
+  ipcRenderer.send('log', 'Platform: ' + platform);
+  ipcRenderer.send('log', 'Lang: ' + lang);
 
   navigator.__defineGetter__('userAgent', function(){
     return userAgent;
@@ -42,15 +52,18 @@ ipcRenderer.on('configData', function (event, config) {
   ]).then((data) => (Promise.resolve({
     ...data,
     platform,
+    brands: handleBrands(data?.brands || []),
+    fullVersionList: handleBrands(data?.fullVersionList || []),
   })));
 
-  highEntropyValues.then((data) => { console.log(JSON.stringify(data)); });
+  highEntropyValues.then((data) => { ipcRenderer.send('log', 'High entropy values: ' + JSON.stringify(data)); });
 
   navigator.__defineGetter__('userAgentData', function() {
     return {
       ...originalUAData,
       getHighEntropyValues: () => (highEntropyValues),
       platform,
+      brands: handleBrands(originalUAData.brands),
     };
   });
 });

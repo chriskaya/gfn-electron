@@ -6,7 +6,7 @@ const { switchFullscreenState } = require('./windowManager.js');
 const HOME_PAGE = 'https://play.geforcenow.com?toto=tata';
 
 const DEFAULT_UA = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/104.0.5112.101 Safari/537.36';
-const WIN_UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/104.0.0.0 Safari/537.36';
+const WIN_UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36';
 const CHROME_UA = 'Mozilla/5.0 (X11; CrOS x86_64 14909.100.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/104.0.5112.83 Safari/537.36';
 
 const DEFAULT_LANG = 'en-GB';
@@ -48,6 +48,10 @@ ipcMain.on('getConfigData', function (event, arg) {
   });
 });
 
+ipcMain.on('log', function (event, arg) {
+  console.log('[Preload] ' + arg);
+});
+
 app.commandLine.appendSwitch('enable-features', 'VaapiVideoDecoder,WaylandWindowDecorations');
 
 app.commandLine.appendSwitch(
@@ -76,10 +80,16 @@ async function createWindow() {
     lang,
   }));
 
+  BrowserWindow.getAllWindows()[0].webContents.openDevTools();
+
   if (process.argv.includes('--direct-start')) {
     homePage = 'https://play.geforcenow.com/mall/#/streamer?launchSource=GeForceNOW&cmsId=' + process.argv[process.argv.indexOf('--direct-start') + 1];
   }
-  mainWindow.loadURL(homePage, { userAgent });
+  mainWindow.loadURL(homePage, { userAgent }).then(() => {
+    if (!process.argv.includes('--open-dev-tools')) {
+      BrowserWindow.getAllWindows()[0].webContents.closeDevTools();
+    }
+  });
 
   /*
   uncomment this to debug any errors with loading GFN landing page
@@ -93,10 +103,6 @@ async function createWindow() {
 
 app.whenReady().then(async () => {
   createWindow();
-
-  if (process.argv.includes('--open-dev-tools')) {
-    BrowserWindow.getAllWindows()[0].webContents.openDevTools();
-  }
 
   DiscordRPC('GeForce NOW');
 
